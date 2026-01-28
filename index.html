@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>주은유로 주차장 계산기</title>
+<title>🤖주은유로 주차장 계산기</title>
 
 <style>
 :root {
@@ -75,7 +75,6 @@ input {
 .admin {
   display: none;
 }
-
 body.admin-mode .admin {
   display: block;
 }
@@ -92,23 +91,23 @@ body.admin-mode .admin {
   </div>
 </div>
 
-<!-- 관리자 전용 -->
+<!-- 관리자 전용 요금 설정 -->
 <div class="section admin">
   <b>요금 설정</b><br><br>
 
   최초
-  <input type="number" id="baseMinutes" value="30"> 분 /
-  <input type="number" id="basePrice" value="1000"> 원<br><br>
+  <input type="number" id="baseMinutes"> 분 /
+  <input type="number" id="basePrice"> 원<br><br>
 
   이후
-  <input type="number" id="unitMinutes" value="10"> 분마다
-  <input type="number" id="unitPrice" value="500"> 원<br><br>
+  <input type="number" id="unitMinutes"> 분마다
+  <input type="number" id="unitPrice"> 원<br><br>
 
   1일 최대
-  <input type="number" id="dailyMax" value="20000"> 원
+  <input type="number" id="dailyMax"> 원
 </div>
 
-<!-- 일반 사용자 -->
+<!-- 일반 사용자 영역 -->
 <div class="section">
   <b>주차 시간</b><br><br>
   입차 시각
@@ -121,6 +120,16 @@ body.admin-mode .admin {
 <div class="result" id="result"></div>
 
 <script>
+/* DOM 캐시 */
+const baseMinutesEl = document.getElementById("baseMinutes");
+const basePriceEl = document.getElementById("basePrice");
+const unitMinutesEl = document.getElementById("unitMinutes");
+const unitPriceEl = document.getElementById("unitPrice");
+const dailyMaxEl = document.getElementById("dailyMax");
+const startEl = document.getElementById("start");
+const endEl = document.getElementById("end");
+const resultEl = document.getElementById("result");
+
 /* 다크모드 토글 + 기억 */
 function toggleTheme() {
   document.body.classList.toggle("dark");
@@ -135,23 +144,49 @@ function toggleAdmin() {
   document.body.classList.toggle("admin-mode");
 }
 
-/* 초기 상태 복원 */
-(function init() {
-  if (localStorage.getItem("theme") === "dark") {
-    document.body.classList.add("dark");
+/* 요금 저장 */
+function saveFeeRule() {
+  const rule = {
+    baseMinutes: baseMinutesEl.value,
+    basePrice: basePriceEl.value,
+    unitMinutes: unitMinutesEl.value,
+    unitPrice: unitPriceEl.value,
+    dailyMax: dailyMaxEl.value
+  };
+  localStorage.setItem("feeRule", JSON.stringify(rule));
+}
+
+/* 요금 불러오기 */
+function loadFeeRule() {
+  const saved = localStorage.getItem("feeRule");
+  if (saved) {
+    const r = JSON.parse(saved);
+    baseMinutesEl.value = r.baseMinutes;
+    basePriceEl.value = r.basePrice;
+    unitMinutesEl.value = r.unitMinutes;
+    unitPriceEl.value = r.unitPrice;
+    dailyMaxEl.value = r.dailyMax;
+  } else {
+    baseMinutesEl.value = 30;
+    basePriceEl.value = 1000;
+    unitMinutesEl.value = 10;
+    unitPriceEl.value = 500;
+    dailyMaxEl.value = 20000;
   }
-})();
+}
 
 /* 계산 로직 */
 function calculate() {
-  const baseMinutes = +document.getElementById("baseMinutes").value;
-  const basePrice = +document.getElementById("basePrice").value;
-  const unitMinutes = +document.getElementById("unitMinutes").value;
-  const unitPrice = +document.getElementById("unitPrice").value;
-  const dailyMax = +document.getElementById("dailyMax").value;
+  saveFeeRule();
 
-  const start = document.getElementById("start").value;
-  const end = document.getElementById("end").value;
+  const baseMinutes = +baseMinutesEl.value;
+  const basePrice = +basePriceEl.value;
+  const unitMinutes = +unitMinutesEl.value;
+  const unitPrice = +unitPriceEl.value;
+  const dailyMax = +dailyMaxEl.value;
+
+  const start = startEl.value;
+  const end = endEl.value;
 
   if (!start || !end) {
     alert("시간을 입력하세요");
@@ -175,10 +210,19 @@ function calculate() {
   }
   fee = Math.min(fee, dailyMax);
 
-  document.getElementById("result").innerHTML =
+  resultEl.innerHTML =
     `이용 시간: ${h}시간 ${m}분<br>주차 요금: ${fee.toLocaleString()}원`;
 }
+
+/* 초기화 */
+(function init() {
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+  loadFeeRule();
+})();
 </script>
 
 </body>
 </html>
+
