@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>주은유로 주차장 계산기</title>
+
+<style>
+:root {
+  --bg: #ffffff;
+  --card: #f5f5f5;
+  --text: #111111;
+  --border: #dddddd;
+  --button: #007aff;
+}
+
+body.dark {
+  --bg: #121212;
+  --card: #1e1e1e;
+  --text: #f1f1f1;
+  --border: #333333;
+  --button: #0a84ff;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+  padding: 20px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 6px;
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0;
+}
+
+button {
+  font-size: 14px;
+  padding: 6px 10px;
+  background: var(--button);
+  color: white;
+  border: none;
+  border-radius: 6px;
+}
+
+.section {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 14px;
+  margin-top: 18px;
+}
+
+input {
+  width: 100%;
+  font-size: 16px;
+  padding: 8px;
+  margin-top: 6px;
+}
+
+.result {
+  font-size: 18px;
+  margin-top: 15px;
+}
+
+/* 관리자 영역 숨김 */
+.admin {
+  display: none;
+}
+
+body.admin-mode .admin {
+  display: block;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">
+  <h1>주은유로 주차장</h1>
+  <div>
+    <button onclick="toggleTheme()">🌙 / ☀️</button>
+    <button onclick="toggleAdmin()">관리자</button>
+  </div>
+</div>
+
+<!-- 관리자 전용 -->
+<div class="section admin">
+  <b>요금 설정</b><br><br>
+
+  최초
+  <input type="number" id="baseMinutes" value="30"> 분 /
+  <input type="number" id="basePrice" value="1000"> 원<br><br>
+
+  이후
+  <input type="number" id="unitMinutes" value="10"> 분마다
+  <input type="number" id="unitPrice" value="500"> 원<br><br>
+
+  1일 최대
+  <input type="number" id="dailyMax" value="20000"> 원
+</div>
+
+<!-- 일반 사용자 -->
+<div class="section">
+  <b>주차 시간</b><br><br>
+  입차 시각
+  <input type="time" id="start"><br><br>
+  출차 시각
+  <input type="time" id="end"><br><br>
+  <button onclick="calculate()">계산하기</button>
+</div>
+
+<div class="result" id="result"></div>
+
+<script>
+/* 다크모드 토글 + 기억 */
+function toggleTheme() {
+  document.body.classList.toggle("dark");
+  localStorage.setItem(
+    "theme",
+    document.body.classList.contains("dark") ? "dark" : "light"
+  );
+}
+
+/* 관리자 모드 토글 */
+function toggleAdmin() {
+  document.body.classList.toggle("admin-mode");
+}
+
+/* 초기 상태 복원 */
+(function init() {
+  if (localStorage.getItem("theme") === "dark") {
+    document.body.classList.add("dark");
+  }
+})();
+
+/* 계산 로직 */
+function calculate() {
+  const baseMinutes = +document.getElementById("baseMinutes").value;
+  const basePrice = +document.getElementById("basePrice").value;
+  const unitMinutes = +document.getElementById("unitMinutes").value;
+  const unitPrice = +document.getElementById("unitPrice").value;
+  const dailyMax = +document.getElementById("dailyMax").value;
+
+  const start = document.getElementById("start").value;
+  const end = document.getElementById("end").value;
+
+  if (!start || !end) {
+    alert("시간을 입력하세요");
+    return;
+  }
+
+  let [sh, sm] = start.split(":").map(Number);
+  let [eh, em] = end.split(":").map(Number);
+
+  let s = sh * 60 + sm;
+  let e = eh * 60 + em;
+  if (e < s) e += 1440;
+
+  const total = e - s;
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+
+  let fee = basePrice;
+  if (total > baseMinutes) {
+    fee += Math.ceil((total - baseMinutes) / unitMinutes) * unitPrice;
+  }
+  fee = Math.min(fee, dailyMax);
+
+  document.getElementById("result").innerHTML =
+    `이용 시간: ${h}시간 ${m}분<br>주차 요금: ${fee.toLocaleString()}원`;
+}
+</script>
+
+</body>
+</html>
